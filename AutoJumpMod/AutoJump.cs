@@ -138,10 +138,28 @@ namespace AutoJumpMod
         }
 
 
+        private float _lastCleanupTime;
+        private float _lastModCheckTime;
+        private bool _isBscLoadedCached;
+        private bool _isAutoBoostLoadedCached;
+        private bool _isArmoryManagerLoadedCached;
+
         void LateUpdate()
         {
+            var now = Time.time;
+            if (now - _lastCleanupTime > 0.5f)
+            {
+                _activeArrows.RemoveAll(a => !a || a.outOfCamera);
+                _lastCleanupTime = now;
+            }
 
-            _activeArrows.RemoveAll(a => !a || a.outOfCamera);
+            if (now - _lastModCheckTime > 1f)
+            {
+                _isBscLoadedCached = _bscChecker.IsLoaded();
+                _isAutoBoostLoadedCached = _autoBoostChecker.IsLoaded();
+                _isArmoryManagerLoadedCached = _armoryManagerChecker.IsLoaded();
+                _lastModCheckTime = now;
+            }
 
             JumpToggle();
             HandleArrowSpeedOnWindDash();
@@ -169,11 +187,11 @@ namespace AutoJumpMod
         }
 
 
-        public bool IsBscLoaded() => _bscChecker.IsLoaded();
+        public bool IsBscLoaded() => _isBscLoadedCached;
         public bool ShouldSkipAtSpiritBoost() => _bscChecker.GetBoolFlag();
-        public bool IsAutoBoostLoaded() => _autoBoostChecker.IsLoaded();
+        public bool IsAutoBoostLoaded() => _isAutoBoostLoadedCached;
         public bool IsWindDashEnabled() => _autoBoostChecker.GetBoolFlag();
-        public bool IsArmoryManagerLoaded() => _armoryManagerChecker.IsLoaded();
+        public bool IsArmoryManagerLoaded() => _isArmoryManagerLoadedCached;
 
 
         void OnDestroy() => Instance = Instance == this ? null : Instance;
@@ -226,10 +244,11 @@ namespace AutoJumpMod
         {
             var showTime = _bonusMapCtrl.showCurrentTime;
 
+            var currentMap = _mapCtrl.CurrentBonusMap();
             var inStage1 = GameState.IsBonus()
-                           && _mapCtrl.CurrentBonusMap() == Maps.list.BonusStage;
+                           && currentMap.id == Maps.list.BonusStage.id;
             var inStage3 = GameState.IsBonus()
-                           && _mapCtrl.CurrentBonusMap() == Maps.list.BonusStage3;
+                           && currentMap.id == Maps.list.BonusStage3.id;
 
             if ((inStage1 || inStage3) && !_wasClockVisibleLastFrame && showTime && _bonusMapCtrl.currentSectionIndex == _bonusSection)
                 _bonusSection++;
@@ -305,10 +324,11 @@ namespace AutoJumpMod
 
             if (!_autoJump) return;
 
+            var currentMap = _mapCtrl.CurrentBonusMap();
             var inStage1 = GameState.IsBonus()
-                           && _mapCtrl.CurrentBonusMap() == Maps.list.BonusStage;
+                           && currentMap.id == Maps.list.BonusStage.id;
             var inStage3 = GameState.IsBonus()
-                           && _mapCtrl.CurrentBonusMap() == Maps.list.BonusStage3;
+                           && currentMap.id == Maps.list.BonusStage3.id;
 
             if (!inStage3 || _bonusSection != 2)
                 _didStage2Delay = false;
@@ -722,6 +742,7 @@ namespace AutoJumpMod
             Plugin.Logger.Msg("Dual Randomness restarted");
         }
 
+        private const string DualRandomnessName = "Dual Randomness";
 
         [HarmonyPatch(typeof(RandomEvent), nameof(RandomEvent.Activate))]
         public class Patch_RandomEvent_Activate
@@ -730,7 +751,7 @@ namespace AutoJumpMod
             public static void Postfix(RandomEvent __instance)
             {
                 if (__instance == null || !IsCustomBuild) return;
-                if (__instance.name == "Dual Randomness")
+                if (__instance.name == DualRandomnessName)
                 {
                     Instance?.RegisterDualEvent();
                 }

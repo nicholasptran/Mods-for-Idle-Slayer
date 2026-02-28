@@ -9,6 +9,7 @@ using UnityEngine.UI;
 //using AutoAscendMod;
 using System.Linq;
 using System.Reflection;
+using Il2CppSystem.IO;
 
 namespace ArmoryManager
 {
@@ -99,28 +100,19 @@ namespace ArmoryManager
         }
 
         private void SetWeaponLevels()
-        {
-            var weapons = _weaponsManager.currentItems;
+        { 
+            var keyWeapons = _weaponsManager.currentKeyItemsByUid;
+            var weapons = _weaponsManager.currentItemsByUid;
 
-            var keyWeapons = _weaponsManager.currentKeyItems;
-
-            foreach (var weapon in weapons)
-            {
-                if (weapon == null || weapon.item == null)
-                    continue;
+            foreach (var weapon in weapons.Values)
                 SetWeaponLevel(weapon);
-            }
 
-            foreach (var weapon in keyWeapons)
-            {
-                if (weapon == null || weapon.item == null)
-                    continue;
+            foreach (var weapon in keyWeapons.Values)
                 SetWeaponLevel(weapon);
-            }
         }
-
+        
         private static void SetWeaponLevel(WeaponItemInventory weapon) =>
-            weapon.item.levelRequirementIncreasePerLevel = Plugin.Config.RequirementPerLevel.Value;
+            weapon?.item?.levelRequirementIncreasePerLevel = Plugin.Config.RequirementPerLevel.Value;
 
         private IEnumerator ResetBreakerDuringRunner()
         {
@@ -155,8 +147,7 @@ namespace ArmoryManager
 
             if (GameState.IsRunner() && (triggerBreakCheck || !lastIsRunner) && !AscendCalled)
             {
-                if (_breaker == null)
-                    _breaker = (Coroutine)MelonCoroutines.Start(RunBreaker());
+                _breaker ??= (Coroutine)MelonCoroutines.Start(RunBreaker());
 
                 _runningFor30Seconds = (Coroutine)MelonCoroutines.Start(ResetBreakerDuringRunner());
             }
@@ -292,7 +283,9 @@ namespace ArmoryManager
                 {
 
                     // 2) Break true dupes (same name + same-or-better skills)
-                    foreach (var compare in _weaponsManager.currentItems)
+                    var currentItems = _weaponsManager.CurrentItems().ToArray();
+
+                    foreach (var compare in currentItems)
                     {
                         bool identical = true;
 
@@ -413,7 +406,7 @@ namespace ArmoryManager
             );
 
             // 7) Remove weapon & save
-            _weaponsManager.currentItems.Remove(currentItem);
+            _weaponsManager.currentItemsByUid.Remove(currentItem.uid);
             _weaponsManager.SaveWeapons();
             _playerInventory.CalculateValues();
 

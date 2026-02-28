@@ -11,7 +11,7 @@
 	</PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="LavaGang.MelonLoader" Version="0.7.0" />
+      <PackageReference Include="LavaGang.MelonLoader" Version="0.7.1" />
       <PackageReference Include="Lib.Harmony" Version="2.3.6" />
     </ItemGroup>
 
@@ -48,16 +48,16 @@
 	</ItemGroup>
 
 	<ItemGroup>
-      <None Include="ArmoryManager.csproj.user" />
-    </ItemGroup>
-
-	<ItemGroup>
 		<None Include="Assets\manifest.json">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 		<None Include="Assets\banner.png" Condition="Exists('Assets\banner.png')">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Extensions\" />
 	</ItemGroup>
 
 </Project>
